@@ -34,20 +34,38 @@ function toXhtml(html) {
     .join('');
 }
 
-function imageExtension(contentType, imageUrl) {
-  const extensions = {
-    'image/gif': 'gif',
-    'image/jpeg': 'jpg',
-    'image/png': 'png',
-    'image/svg+xml': 'svg',
-    'image/webp': 'webp'
-  };
-  if (extensions[contentType]) {
-    return extensions[contentType];
-  }
+const MAX_EMBEDDED_IMAGE_EDGE = 1600;
+const EMBEDDED_IMAGE_QUALITY = 0.82;
 
-  const extension = imageUrl.match(/\.([a-z0-9]+)(?:[?#]|$)/i)?.[1]?.toLowerCase();
-  return extension && /^[a-z0-9]{1,5}$/.test(extension) ? extension : 'bin';
+async function compressImage(blob) {
+  const objectUrl = URL.createObjectURL(blob);
+  const image = new Image();
+
+  try {
+    image.src = objectUrl;
+    await image.decode();
+
+    const scale = Math.min(1, MAX_EMBEDDED_IMAGE_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Could not create an image canvas.');
+    }
+
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const compressedBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob(result => result ? resolve(result) : reject(new Error('Could not encode image.')), 'image/jpeg', EMBEDDED_IMAGE_QUALITY);
+    });
+    return { blob: compressedBlob, contentType: 'image/jpeg' };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 async function prepareEmbeddedImages(html, sourceUrl) {
@@ -76,10 +94,11 @@ async function prepareEmbeddedImages(html, sourceUrl) {
           throw new Error(`Image request failed with ${response.status}`);
         }
         const blob = await response.blob();
-        const contentType = blob.type || 'application/octet-stream';
-        imagePath = `images/image-${images.length + 1}.${imageExtension(contentType, resolvedSource)}`;
+        const compressedImage = await compressImage(blob);
+        const contentType = compressedImage.contentType;
+        imagePath = `images/image-${images.length + 1}.jpg`;
         imagePaths.set(resolvedSource, imagePath);
-        images.push({ path: imagePath, blob, contentType });
+        images.push({ path: imagePath, blob: compressedImage.blob, contentType });
       }
 
       imageElement.setAttribute('src', imagePath);
