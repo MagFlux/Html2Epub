@@ -49,6 +49,31 @@ h1 {
   line-height: 1.45;
 }
 
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 0 15px 0 17px;
+  min-height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, .38);
+  color: var(--ink);
+  font: 600 14px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  cursor: pointer;
+}
+
+.option:hover { border-color: var(--ink); }
+
+.option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--orange);
+  cursor: pointer;
+}
+
 button {
   display: flex;
   align-items: center;

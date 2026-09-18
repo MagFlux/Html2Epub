@@ -1,6 +1,29 @@
 const convertButton = document.querySelector('#convert');
 const status = document.querySelector('#status');
 const result = document.querySelector('#result');
+const includeImagesInput = document.querySelector('#include-images');
+
+const INCLUDE_IMAGES_KEY = 'includeImages';
+const INCLUDE_IMAGES_DEFAULT = true;
+
+function hasSyncStorage() {
+  return Boolean(chrome?.storage?.sync);
+}
+
+async function getIncludeImages() {
+  if (!hasSyncStorage()) {
+    return INCLUDE_IMAGES_DEFAULT;
+  }
+  const stored = await chrome.storage.sync.get(INCLUDE_IMAGES_KEY);
+  return stored[INCLUDE_IMAGES_KEY] !== false;
+}
+
+async function setIncludeImages(value) {
+  if (!hasSyncStorage()) {
+    return;
+  }
+  await chrome.storage.sync.set({ [INCLUDE_IMAGES_KEY]: value });
+}
 
 function setStatus(message, isError = false) {
   status.textContent = message;
@@ -32,6 +55,13 @@ function toXhtml(html) {
   return Array.from(wrapper.childNodes)
     .map(node => serializer.serializeToString(node))
     .join('');
+}
+
+function stripImages(html) {
+  const parsed = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+  const wrapper = parsed.body.firstElementChild;
+  wrapper.querySelectorAll('img').forEach(image => image.remove());
+  return toXhtml(wrapper.innerHTML);
 }
 
 const MAX_EMBEDDED_IMAGE_EDGE = 1600;
@@ -322,10 +352,22 @@ async function convertCurrentPage() {
       throw new Error('Readability could not find an article on this page.');
     }
 
-    setStatus('Embedding images...');
-    const preparedArticle = await prepareEmbeddedImages(article.content, tab.url);
-    setStatus(`Building EPUB${preparedArticle.images.length ? ` with ${preparedArticle.images.length} image${preparedArticle.images.length === 1 ? '' : 's'}` : ''}...`);
-    const epubBlob = await createEpub({ ...article, content: preparedArticle.html }, tab.url, preparedArticle.images);
+    let html;
+    let images;
+
+    if (await getIncludeImages()) {
+      setStatus('Embedding images...');
+      const preparedArticle = await prepareEmbeddedImages(article.content, tab.url);
+      html = preparedArticle.html;
+      images = preparedArticle.images;
+      setStatus(`Building EPUB${images.length ? ` with ${images.length} image${images.length === 1 ? '' : 's'}` : ''}...`);
+    } else {
+      setStatus('Building EPUB...');
+      html = stripImages(article.content);
+      images = [];
+    }
+
+    const epubBlob = await createEpub({ ...article, content: html }, tab.url, images);
     const downloadUrl = URL.createObjectURL(epubBlob);
     await chrome.downloads.download({
       url: downloadUrl,
@@ -334,7 +376,7 @@ async function convertCurrentPage() {
     });
 
     setStatus(`Downloaded ${article.title || 'untitled article'}.`);
-    result.textContent = preparedArticle.html;
+    result.textContent = html;
     result.hidden = false;
   } catch (error) {
     setStatus(error.message || 'Could not convert this page.', true);
@@ -342,5 +384,13 @@ async function convertCurrentPage() {
     convertButton.disabled = false;
   }
 }
+
+includeImagesInput.addEventListener('change', async () => {
+  await setIncludeImages(includeImagesInput.checked);
+});
+
+(async () => {
+  includeImagesInput.checked = await getIncludeImages();
+})();
 
 convertButton.addEventListener('click', convertCurrentPage);
