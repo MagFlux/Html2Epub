@@ -273,10 +273,12 @@ function createEpub(article, sourceUrl, embeddedImages) {
   const zip = new JSZip();
   const title = article.title || 'Untitled article';
   const author = article.byline ? article.byline.trim() : '';
+  const publisher = article.siteName ? article.siteName.trim() : '';
   const identifier = `urn:html2epub:${crypto.randomUUID()}`;
   const modified = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const escapedTitle = escapeXml(title);
   const escapedAuthor = escapeXml(author);
+  const escapedPublisher = escapeXml(publisher);
   const escapedIdentifier = escapeXml(identifier);
   const escapedSourceUrl = escapeXml(sourceUrl || '');
   const coverSvg = createCoverSvg(title, author);
@@ -364,6 +366,7 @@ img { max-width: 100%; height: auto; }`);
     <dc:identifier id="book-id">${escapedIdentifier}</dc:identifier>
     <dc:title>${escapedTitle}</dc:title>
     ${author ? `<dc:creator>${escapedAuthor}</dc:creator>` : ''}
+    ${publisher ? `<dc:publisher>${escapedPublisher}</dc:publisher>` : ''}
     <dc:subject>Article</dc:subject>
     <dc:language>en</dc:language>
     <meta name="cover" content="cover-image"/>

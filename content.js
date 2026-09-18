@@ -36,6 +36,24 @@
     return null;
   };
 
+  const siteNameFromMeta = () => {
+    const selectors = [
+      'meta[property="og:site_name"]',
+      'meta[name="og:site_name"]',
+      'meta[name="application-name"]',
+      'meta[name="apple-mobile-web-app-title"]',
+      'meta[name="publisher"]',
+      'meta[property="publisher"]'
+    ];
+    for (const selector of selectors) {
+      const content = document.querySelector(selector)?.getAttribute('content')?.trim();
+      if (content) {
+        return content;
+      }
+    }
+    return null;
+  };
+
   globalThis.html2EpubExtract = () => {
     const documentClone = document.cloneNode(true);
     // Ars Technica (PhotoSwipe) embeds a hidden `.pswp-caption-content` copy
@@ -71,7 +89,7 @@
       textContent: article.textContent,
       byline: article.byline,
       excerpt: article.excerpt,
-      siteName: article.siteName,
+      siteName: article.siteName?.trim() || siteNameFromMeta(),
       dir: article.dir,
       length: article.length
     };
