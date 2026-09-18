@@ -20,6 +20,22 @@ Html2Epub is a Chrome Manifest V3 extension. The popup extracts the readable art
 - Preserve the separate third-party licenses for the vendored Readability and JSZip files.
 - Keep extracted article HTML escaped or serialized safely before placing it into XHTML or XML documents.
 - Use the existing popup-to-content-script flow and preserve the minimum permissions needed by the feature.
+- Keep `README.md` up to date with every code change.
+
+## Documentation Maintenance (mandatory for AI agents)
+
+- When any code, permission, UI, option, file, or EPUB output change occurs, update `README.md` in the same change.
+- Sync at minimum: feature summary, Load in Chrome steps, behavior/options (e.g. Include images default and storage), Files list, permissions/host access notes, and EPUB packaging details.
+- Do not leave `README.md` describing removed features, renamed files, or outdated permissions.
+
+## License Compliance (mandatory for AI agents)
+
+- The project license is GNU Affero General Public License v3.0 or later (`LICENSE.md`). Any AI agent making code or dependency changes must keep the repository compliant with it.
+- Before finishing a change, verify: no new runtime code, vendored file, or dependency introduces a license incompatible with AGPL-3.0-or-later.
+- Compatible inputs include permissive licenses (MIT, BSD, ISC, Zlib, Apache-2.0 with notices preserved) and GPL-3.0-or-later (including dual `MIT OR GPL-3.0-or-later` used under its GPL-3.0 option). Apache-2.0 code may be included in an AGPL-3.0 work; GPL-3.0 and AGPL-3.0 code may be combined per AGPL-3.0 section 13.
+- Do not add GPL-2.0-only, proprietary, unknown-license, or attribution-stripped code without explicit human approval. Never remove copyright or license headers from `readability.js`, `jszip.min.js`, or any vendored file.
+- When adding, upgrading, or removing a dependency or vendored file: update `package.json` / `package-lock.json` only via the package manager, re-copy the vendored distribution, confirm its embedded license header, and update `NOTICE.md` with name, version, license, source, and compliance basis.
+- Keep `NOTICE.md` accurate. It is the dependency/license breakdown of record.
 
 ## Validation
 
