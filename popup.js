@@ -60,7 +60,13 @@ function toXhtml(html) {
 function stripImages(html) {
   const parsed = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
   const wrapper = parsed.body.firstElementChild;
+  wrapper.querySelectorAll('figure').forEach(figure => {
+    if (figure.querySelector('img, picture')) {
+      figure.remove();
+    }
+  });
   wrapper.querySelectorAll('img').forEach(image => image.remove());
+  wrapper.querySelectorAll('picture').forEach(picture => picture.remove());
   return toXhtml(wrapper.innerHTML);
 }
 
