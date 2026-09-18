@@ -1,10 +1,9 @@
 const convertButton = document.querySelector('#convert');
 const status = document.querySelector('#status');
-const result = document.querySelector('#result');
 const includeImagesInput = document.querySelector('#include-images');
 
 const INCLUDE_IMAGES_KEY = 'includeImages';
-const INCLUDE_IMAGES_DEFAULT = true;
+const INCLUDE_IMAGES_DEFAULT = false;
 
 function hasSyncStorage() {
   return Boolean(chrome?.storage?.sync);
@@ -15,7 +14,7 @@ async function getIncludeImages() {
     return INCLUDE_IMAGES_DEFAULT;
   }
   const stored = await chrome.storage.sync.get(INCLUDE_IMAGES_KEY);
-  return stored[INCLUDE_IMAGES_KEY] !== false;
+  return stored[INCLUDE_IMAGES_KEY] ?? INCLUDE_IMAGES_DEFAULT;
 }
 
 async function setIncludeImages(value) {
@@ -335,7 +334,6 @@ img { max-width: 100%; height: auto; }`);
 
 async function convertCurrentPage() {
   convertButton.disabled = true;
-  result.hidden = true;
   setStatus('Reading current page...');
 
   try {
@@ -382,8 +380,6 @@ async function convertCurrentPage() {
     });
 
     setStatus(`Downloaded ${article.title || 'untitled article'}.`);
-    result.textContent = html;
-    result.hidden = false;
   } catch (error) {
     setStatus(error.message || 'Could not convert this page.', true);
   } finally {

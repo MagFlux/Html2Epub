@@ -106,14 +106,3 @@ button:disabled { cursor: wait; opacity: .65; }
 }
 
 .status.error { color: #b33c25; }
-
-.result {
-  max-height: 90px;
-  margin: 10px 0 0;
-  padding: 10px;
-  overflow: auto;
-  border-top: 1px solid var(--line);
-  white-space: pre-wrap;
-  color: var(--muted);
-  font: 11px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
-}
