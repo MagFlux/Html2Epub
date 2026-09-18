@@ -38,6 +38,14 @@
 
   globalThis.html2EpubExtract = () => {
     const documentClone = document.cloneNode(true);
+    // Ars Technica (PhotoSwipe) embeds a hidden `.pswp-caption-content` copy
+    // of each image caption for the lightbox alongside the visible caption
+    // (`figcaption` or a sibling `.caption`). Readability keeps both and
+    // strips class names, so this must run here — before parsing — while the
+    // marker class still exists. The visible caption is left untouched.
+    documentClone.querySelectorAll('.pswp-caption-content').forEach(caption => {
+      caption.remove();
+    });
     const reader = new Readability(documentClone);
     const article = reader.parse();
 

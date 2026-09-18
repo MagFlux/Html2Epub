@@ -56,9 +56,60 @@ function toXhtml(html) {
     .join('');
 }
 
+function normalizeCaptionText(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function figureCaptionText(figure) {
+  const figcaption = figure.querySelector('figcaption');
+  if (figcaption && normalizeCaptionText(figcaption.textContent)) {
+    return figcaption.textContent;
+  }
+  return figure.textContent;
+}
+
+// Generic safety net: drop repeated caption blocks inside a `figure` by
+// comparing text (not class names, which Readability strips). Keeps the first
+// copy so lightbox/gallery duplicates from any site collapse to one caption.
+function dedupeFigureCaptions(root) {
+  root.querySelectorAll('figure').forEach(figure => {
+    const seen = new Set();
+    Array.from(figure.children).forEach(child => {
+      if (!/^(FIGCAPTION|P|DIV)$/.test(child.tagName)) {
+        return;
+      }
+      if (child.querySelector('img, picture')) {
+        return;
+      }
+      const text = normalizeCaptionText(child.textContent);
+      if (!text) {
+        return;
+      }
+      if (seen.has(text)) {
+        child.remove();
+      } else {
+        seen.add(text);
+      }
+    });
+  });
+}
+
+// Strip all `alt`/`title` text from images: visible captions already carry
+// the description, so alt text only adds noise in the EPUB.
+function stripImageAlts(root) {
+  root.querySelectorAll('img[alt], img[title]').forEach(imageElement => {
+    imageElement.removeAttribute('alt');
+    imageElement.removeAttribute('title');
+  });
+}
+
 function stripImages(html) {
   const parsed = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
   const wrapper = parsed.body.firstElementChild;
+  dedupeFigureCaptions(wrapper);
   wrapper.querySelectorAll('figure').forEach(figure => {
     if (figure.querySelector('img, picture')) {
       figure.remove();
@@ -106,6 +157,8 @@ async function compressImage(blob) {
 async function prepareEmbeddedImages(html, sourceUrl) {
   const parsed = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
   const wrapper = parsed.body.firstElementChild;
+  dedupeFigureCaptions(wrapper);
+  stripImageAlts(wrapper);
   const images = [];
   const imagePaths = new Map();
   const imageElements = Array.from(wrapper.querySelectorAll('img[src]'));
